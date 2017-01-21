@@ -32,10 +32,11 @@ def refresh():
     init_redis_cli()
     redis_cli.flushdb()
     for domain in config['domains'].keys():
-        domain_file = config['domains'][domain] + '?_=%i' % int(round(time.time() * 1000))
+        domain_data = config['domains'][domain]
+        domain_file = domain_data['urls']
 
         try:
-            data = requests.get(domain_file).content
+            data = requests.get(domain_file + '?_=%i' % int(round(time.time() * 1000))).content
             if domain_file.endswith('.yml'):
                 data = yaml.load(data)
             else:
@@ -46,8 +47,9 @@ def refresh():
         for slug in data.keys():
             redis_cli.set('url:%s:%s' % (domain, slug), data[slug])
 
-    if os.environ['EXECUTE_AFTER_REFRESH']:
-        subprocess.Popen(os.environ['EXECUTE_AFTER_REFRESH'])
+        # only clear the cache if there's no domain specified or if the domain specified matches the domain we've just processed
+        if 'afterRefresh' in domain_data and (request.args.get('domain') is None or domain == request.args.get('domain')):
+            subprocess.Popen(domain_data['afterRefresh'])
 
     return 'OK'
 

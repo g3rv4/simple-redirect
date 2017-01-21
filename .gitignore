@@ -1,4 +1,4 @@
-clear-cache.sh
+clear-cache*.sh
 config.json
 static/components/
 *.db
